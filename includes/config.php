@@ -1,10 +1,14 @@
 <?php
+// ================= SESSION =================
 session_name('roncelizz_session');
+
+$cookieDomain = $_SERVER['HTTP_HOST'] ?? '';
+
 session_set_cookie_params([
     'lifetime' => 86400,
     'path' => '/',
-    'domain' => 'localhost',
-    'secure' => false,
+    'domain' => $cookieDomain,
+    'secure' => (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off'),
     'httponly' => true,
     'samesite' => 'Lax'
 ]);
@@ -13,32 +17,38 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-// Database Configuration
-define('DB_HOST', 'localhost');
-define('DB_NAME', 'roncelizz_db');
-define('DB_USER', 'root');
-define('DB_PASS', '');
+// ================= DATABASE (ENV) =================
+define('DB_HOST', getenv('MYSQLHOST') ?: '127.0.0.1');
+define('DB_PORT', getenv('MYSQLPORT') ?: 3306);
+define('DB_NAME', getenv('MYSQLDATABASE') ?: 'roncelizz_db');
+define('DB_USER', getenv('MYSQLUSER') ?: 'root');
+define('DB_PASS', getenv('MYSQLPASSWORD') ?: '');
 define('DB_CHARSET', 'utf8mb4');
 
-// Application Configuration
-define('BASE_URL', 'http://localhost/web_roncelizz/');
+// ================= APP CONFIG =================
+$protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+$host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+
+define('BASE_URL', $protocol . '://' . $host);
 define('SITE_NAME', 'Roncelizz');
 define('SITE_DESCRIPTION', 'Toko Online Manik-Manik Eksklusif');
 
-// Timezone
+// ================= TIMEZONE =================
 date_default_timezone_set('Asia/Jakarta');
 
-// Development Mode
-define('DEBUG_MODE', true);
+// ================= MODE =================
+define('DEBUG_MODE', getenv('APP_DEBUG') === 'true');
 
-// File Upload
-define('UPLOAD_PATH', 'assets/images/products/');
-define('MAX_UPLOAD_SIZE', 2 * 1024 * 1024); // 2MB
+// ================= UPLOAD =================
+define('UPLOAD_PATH', __DIR__ . '/../assets/images/products/');
+define('MAX_UPLOAD_SIZE', 2 * 1024 * 1024);
 define('ALLOWED_TYPES', ['jpg', 'jpeg', 'png', 'gif', 'webp']);
 
-// Connect to Database
+// ================= DATABASE CONNECT =================
 try {
-    $dsn = "mysql:host=" . DB_HOST . ";dbname=" . DB_NAME . ";charset=" . DB_CHARSET;
+    $dsn = "mysql:host=" . DB_HOST . ";port=" . DB_PORT .
+           ";dbname=" . DB_NAME . ";charset=" . DB_CHARSET;
+
     $options = [
         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
@@ -50,12 +60,11 @@ try {
 } catch (PDOException $e) {
     if (DEBUG_MODE) {
         die("Database Connection Error: " . $e->getMessage());
-    } else {
-        die("Database connection failed. Please try again later.");
     }
+    die("Database connection failed.");
 }
 
-// Error Reporting
+// ================= ERROR REPORT =================
 if (DEBUG_MODE) {
     error_reporting(E_ALL);
     ini_set('display_errors', 1);
@@ -64,23 +73,15 @@ if (DEBUG_MODE) {
     ini_set('display_errors', 0);
 }
 
-// Helper functions
+// ================= HELPERS =================
 function redirect($url)
 {
-    // Jika URL tidak dimulai dengan http/https dan tidak dimulai dengan /
-    if (strpos($url, 'http') !== 0 && strpos($url, 'https') !== 0 && strpos($url, '/') !== 0) {
-        // Tambahkan / di depan
-        $url = '/' . $url;
-    }
-
-    // Jika URL sudah lengkap
-    if (strpos($url, 'http') === 0 || strpos($url, 'https') === 0) {
-        header("Location: " . $url);
+    if (preg_match('#^https?://#', $url)) {
+        header("Location: $url");
     } else {
-        // Gunakan BASE_URL
-        header("Location: " . rtrim(BASE_URL, '/') . $url);
+        header("Location: " . rtrim(BASE_URL, '/') . '/' . ltrim($url, '/'));
     }
-    exit();
+    exit;
 }
 
 function isLoggedIn()
@@ -103,15 +104,10 @@ function getCurrentDate()
     return date('Y-m-d H:i:s');
 }
 
-// Helper function untuk sanitize input
 function sanitize($data)
 {
     if (is_array($data)) {
         return array_map('sanitize', $data);
     }
-    $data = trim($data);
-    $data = stripslashes($data);
-    $data = htmlspecialchars($data, ENT_QUOTES, 'UTF-8');
-    return $data;
+    return htmlspecialchars(trim($data), ENT_QUOTES, 'UTF-8');
 }
-?>

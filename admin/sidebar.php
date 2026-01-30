@@ -91,7 +91,7 @@ Auth::requireAdmin();
                 </a>
             </li>
             <li class="nav-item">
-                <a href="../logout.php" class="nav-link" style="color: var(--peach);" onclick="confirmLogout(event)">
+                <a href="/logout.php" class="nav-link" style="color: var(--peach);" onclick="confirmLogout(event)">
                     <span class="nav-icon"><i class="fas fa-sign-out-alt"></i></span>
                     Logout
                 </a>

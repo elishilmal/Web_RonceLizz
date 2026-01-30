@@ -477,7 +477,7 @@ try {
         <div class="header">
             <div>
                 <h1 class="page-title">Dashboard Admin 💎</h1>
-                <p class="page-subtitle">Selamat datang di panel administrasi Roncelizz</p>
+                <p class="page-subtitle">Selamatdwdwa datang di panel administrasi Roncelizz</p>
             </div>
         </div>
 
